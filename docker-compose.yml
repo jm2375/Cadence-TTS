@@ -1,0 +1,41 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - PORT=:8080
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/cadence?sslmode=disable
+      - ENVIRONMENT=production
+      - TOKEN_EXPIRY=3600000
+      - TOKEN_BYTES=32
+      - DEFAULT_RATE_LIMIT=100
+      - DEFAULT_CAPACITY=1000
+      - BCRYPT_COST=10
+      - MIN_USERNAME_LEN=3
+      - MAX_USERNAME_LEN=50
+      - MIN_PASSWORD_LEN=8
+      - MAX_PASSWORD_LEN=100
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=cadence
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  postgres_data:
